@@ -1,0 +1,103 @@
+# Example config. `npm run setup` writes your real wrangler.toml for you; or copy this file to wrangler.toml and fill in the REPLACE values.
+# Fasta Status — Cloudflare Worker (free plan).
+# Runs on Cloudflare, completely separate from Fasta's Laravel / Next.js hosting.
+name = "fasta-status"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Serve only on the custom domain. Keeping workers.dev off means the admin
+# area cannot be reached on a hostname that Cloudflare Access does not protect.
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "status.fastadeliveries.co.ke", custom_domain = true }
+]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+# The Worker handles the JSON APIs; everything else is a static file.
+run_worker_first = ["/api/*", "/admin/api/*"]
+
+[triggers]
+crons = ["* * * * *"]   # every 60 seconds
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fasta-status"
+database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+migrations_dir = "migrations"
+
+[observability]
+enabled = true
+
+[vars]
+# ---- What to monitor (production). Staging overrides these in [env.staging]. ----
+STOREFRONT_URL = "https://web.fastadeliveries.co.ke"
+API_URL = "https://fastadeliveries.co.ke"
+SELLER_LOGIN_PATH = "/login/vendor"          # admin-configurable "store login URL" slug
+# Leave blank until the dedicated test data exists; blank = check not live yet.
+STOREFRONT_LISTING_PATH = ""                 # e.g. /store/fasta-status-test-store
+BRANDSITE_TEST_SLUG = ""                     # e.g. fasta-status-test
+BRANDSITE_CUSTOM_DOMAIN_URL = ""             # e.g. https://status-test.example.co.ke
+CATALOGUE_CHECK = "true"                     # "false" while the catalogue is intentionally empty
+TRACKING_ENABLED = "false"                   # needs TRACKING_ORDER_ID + TRACKING_CONTACT secrets
+CHECKOUT_QUOTE_ENABLED = "false"             # needs sandbox CHECKOUT_* secrets (see docs)
+
+# ---- Behaviour (brief §3 defaults) ----
+CHECK_TIMEOUT_MS = "10000"
+SLOW_RESPONSE_MS = "5000"   # slower than this counts as "degraded"
+FAIL_THRESHOLD = "3"          # consecutive failures before alert / outage
+RECOVER_THRESHOLD = "2"       # consecutive successes before automated recovery
+STALE_AFTER_SECONDS = "180"   # no fresh results for 3 minutes => "Status unavailable"
+PUBLIC_CACHE_SECONDS = "15"   # edge cache for /api/status.json (absorbs traffic spikes)
+
+# ---- Operator access (Cloudflare Access, Zero Trust free plan) ----
+ACCESS_TEAM_DOMAIN = "REPLACE.cloudflareaccess.com"
+ACCESS_AUD = "REPLACE_WITH_ACCESS_APPLICATION_AUD_TAG"
+PUBLIC_URL = "https://status.fastadeliveries.co.ke"
+DASHBOARD_URL = "https://status.fastadeliveries.co.ke/admin/"
+
+# Secrets (set with `wrangler secret put NAME`, never in this file):
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID   – private alerts (optional)
+#   ALERT_WEBHOOK_URL                      – Slack/Discord/Google Chat webhook (optional)
+#   ADMIN_USERS, SESSION_SECRET            – operator email/password sign-in (created by `npm run setup`)
+#   ADMIN_TOKEN                            – optional break-glass bearer token for the admin API
+#   TRACKING_ORDER_ID, TRACKING_CONTACT    – dedicated test order for the tracking check
+#   CHECKOUT_*                             – sandbox checkout check (see docs/MONITORS.md)
+
+# ---------------------------------------------------------------------------
+[env.staging]
+name = "fasta-status-staging"
+workers_dev = false
+routes = [
+  { pattern = "status-staging.fastadeliveries.co.ke", custom_domain = true }
+]
+[env.staging.triggers]
+crons = ["* * * * *"]
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "fasta-status-staging"
+database_id = "REPLACE_WITH_STAGING_ID"
+migrations_dir = "migrations"
+[env.staging.vars]
+STOREFRONT_URL = "https://staging-web.fastadeliveries.co.ke"
+API_URL = "https://staging.fastadeliveries.co.ke"
+SELLER_LOGIN_PATH = "/login/vendor"
+CATALOGUE_CHECK = "true"
+STOREFRONT_LISTING_PATH = ""
+BRANDSITE_TEST_SLUG = ""
+BRANDSITE_CUSTOM_DOMAIN_URL = ""
+TRACKING_ENABLED = "false"
+CHECKOUT_QUOTE_ENABLED = "false"
+CHECK_TIMEOUT_MS = "10000"
+SLOW_RESPONSE_MS = "5000"   # slower than this counts as "degraded"
+FAIL_THRESHOLD = "3"
+RECOVER_THRESHOLD = "2"
+STALE_AFTER_SECONDS = "180"
+PUBLIC_CACHE_SECONDS = "15"
+ACCESS_TEAM_DOMAIN = "REPLACE.cloudflareaccess.com"
+ACCESS_AUD = "REPLACE_WITH_STAGING_ACCESS_AUD_TAG"
+PUBLIC_URL = "https://status-staging.fastadeliveries.co.ke"
+DASHBOARD_URL = "https://status-staging.fastadeliveries.co.ke/admin/"

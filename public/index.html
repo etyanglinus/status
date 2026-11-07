@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fasta Status</title>
+  <meta name="description" content="Live status of Fasta Deliveries services: storefront, API, seller dashboard, BrandSite, checkout and order tracking. Plus the changelog and upcoming features.">
+  <meta name="theme-color" content="#212e28">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <a class="logo" href="/" aria-label="Fasta Status home">
+        <span class="mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>Fasta <small>Status</small></span>
+      </a>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#status" data-view="status">Status</a>
+        <a href="#changelog" data-view="changelog">Changelog</a>
+        <a href="#upcoming" data-view="upcoming">Upcoming features</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <!-- STATUS -->
+    <div data-panel="status">
+      <div id="banner" class="banner s-unavailable" role="status" aria-live="polite">
+        <span class="icon" aria-hidden="true"></span>
+        <div><h1>Loading status…</h1><p class="small muted" id="updated"></p></div>
+      </div>
+      <div class="summary" id="summary" aria-label="Summary"></div>
+      <div id="stale-note" class="notice" hidden></div>
+
+      <section id="active" aria-labelledby="active-h" hidden>
+        <h2 id="active-h">Active incidents</h2>
+        <div id="active-list"></div>
+      </section>
+
+      <section id="maint-now" aria-labelledby="maint-now-h" hidden>
+        <h2 id="maint-now-h">Maintenance in progress</h2>
+        <div id="maint-now-list"></div>
+      </section>
+
+      <section aria-labelledby="comp-h">
+        <h2 id="comp-h">Services</h2>
+        <div id="components"><div class="card empty">Loading…</div></div>
+        <div class="key" aria-label="Uptime bar key">
+          <span><i style="background:var(--ok)"></i>100%</span>
+          <span><i style="background:#7fcf9f"></i>99–99.9%</span>
+          <span><i style="background:var(--warn)"></i>95–99%</span>
+          <span><i style="background:var(--orange)"></i>90–95%</span>
+          <span><i style="background:var(--bad)"></i>Below 90%</span>
+          <span><i style="background:var(--nodata)"></i>No data</span>
+          <span><i style="background:var(--surface);box-shadow:inset 0 -3px 0 var(--info)"></i>Incident reported that day</span>
+        </div>
+      </section>
+
+      <section aria-labelledby="det-h">
+        <h2 id="det-h">Problems detected by automated checks</h2>
+        <p class="small muted" style="margin-top:-6px">Every problem our checks found in the last 30 days, including short ones that never needed an incident report.</p>
+        <div class="card" id="detect-list"><div class="empty">Loading…</div></div>
+      </section>
+
+      <section aria-labelledby="maint-h">
+        <h2 id="maint-h">Scheduled maintenance</h2>
+        <div class="card" id="maint-list"><div class="empty">Loading…</div></div>
+      </section>
+
+      <section aria-labelledby="past-h">
+        <h2 id="past-h">Past incidents</h2>
+        <div id="past-list"><div class="card empty">Loading…</div></div>
+      </section>
+
+      <section aria-labelledby="how-h">
+        <h2 id="how-h">How we monitor Fasta</h2>
+        <div class="card how">
+          <p>Every minute, automated checks run from Cloudflare's network, separate from Fasta's own servers, so this page keeps working even if Fasta is down. Checks look at real content: a page that loads but shows an error or maintenance screen counts as a failure.</p>
+          <ul>
+            <li><b>Operational:</b> all checks for the service are passing.</li>
+            <li><b>Degraded performance:</b> the service works but has been responding slowly (over 5 seconds) for 3 minutes or more.</li>
+            <li><b>Partial outage:</b> some of the service's checks have failed 3 times in a row.</li>
+            <li><b>Major outage:</b> all of the service's checks have failed 3 times in a row.</li>
+            <li><b>Scheduled maintenance:</b> planned work announced in advance.</li>
+            <li><b>Status unavailable:</b> we haven't received fresh results for 3 minutes, so we can't confirm the current state.</li>
+            <li><b>No known issues:</b> automated checks aren't live yet for this service; the Fasta team updates it by hand.</li>
+          </ul>
+          <p>A single failed check never changes the status; it takes 3 failures in a row. A service counts as recovered after 2 successful checks in a row. The Fasta team posts incident updates with what's affected, what still works and when to expect the next update. All times are East Africa Time (EAT).</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- CHANGELOG -->
+    <div data-panel="changelog" hidden>
+      <h1 style="font-size:1.4rem">Changelog</h1>
+      <p class="muted">New features, improvements and fixes across Fasta.</p>
+      <div class="filters" id="cl-filters" role="group" aria-label="Filter changelog"></div>
+      <div class="card" id="changelog"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- UPCOMING -->
+    <div data-panel="upcoming" hidden>
+      <h1 style="font-size:1.4rem">Upcoming features</h1>
+      <p class="muted">What we're working on. Timings are estimates and can change.</p>
+      <div class="board" id="roadmap"><div class="card empty">Loading…</div></div>
+    </div>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <span>All times are East Africa Time (EAT). This page refreshes every minute.</span>
+      <span><a href="https://fastadeliveries.co.ke">fastadeliveries.co.ke</a> · <a href="https://web.fastadeliveries.co.ke/help-and-support">Help &amp; support</a> · <a href="/api/status.json">JSON</a></span>
+    </div>
+  </footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

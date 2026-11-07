@@ -1,0 +1,62 @@
+From 031a9b80d6993d56fb3318776baf829d03340998 Mon Sep 17 00:00:00 2001
+From: Fasta Status <dorcusjepkemoi@gmail.com>
+Date: Fri, 6 Nov 2026 13:44:28 +0000
+Subject: [PATCH] Add configurable System status footer link
+
+Links to the Fasta Status page (hosted separately). URL is configurable per
+environment so staging can point to its own status page.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01V7K1yNCHEejmZswoaHaxL7
+---
+ .env.example                                  | 3 +++
+ config/app.php                                | 9 +++++++++
+ resources/views/layouts/landing/app.blade.php | 1 +
+ 3 files changed, 13 insertions(+)
+
+diff --git a/.env.example b/.env.example
+index d9ceae3..cbc59bb 100644
+--- a/.env.example
++++ b/.env.example
+@@ -86,3 +86,6 @@ MIX_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"
+ OPENAI_API_KEY=
+ OPENAI_ORGANIZATION=
+ SOFTWARE_VERSION=5.0.1
++
++# Public status page (Fasta Status). Staging: https://status-staging.fastadeliveries.co.ke
++FASTA_STATUS_URL=https://status.fastadeliveries.co.ke
+diff --git a/config/app.php b/config/app.php
+index 583f4c3..521d604 100644
+--- a/config/app.php
++++ b/config/app.php
+@@ -10,6 +10,15 @@ return [
+             && in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true) ? $url : null;
+     })(),
+ 
++    // Public service status page (Fasta Status). Hosted separately from this app so it stays
++    // up when Fasta is down. Set FASTA_STATUS_URL per environment; set it empty to hide the link.
++    'status_url' => (static function (): ?string {
++        $url = env('FASTA_STATUS_URL', 'https://status.fastadeliveries.co.ke');
++
++        return is_string($url) && filter_var($url, FILTER_VALIDATE_URL)
++            && parse_url($url, PHP_URL_SCHEME) === 'https' ? $url : null;
++    })(),
++
+     /*
+     |--------------------------------------------------------------------------
+     | Application Name
+diff --git a/resources/views/layouts/landing/app.blade.php b/resources/views/layouts/landing/app.blade.php
+index 14d7049..4af6838 100644
+--- a/resources/views/layouts/landing/app.blade.php
++++ b/resources/views/layouts/landing/app.blade.php
+@@ -223,6 +223,7 @@
+                 @if(!empty($landing_data_footer['refund_policy_status']))<a href="{{ route('refund') }}">Refund policy</a>@endif
+                 @if(!empty($landing_data_footer['shipping_policy_status']))<a href="{{ route('shipping-policy') }}">Delivery policy</a>@endif
+                 @if(!empty($landing_data_footer['cancellation_policy_status']))<a href="{{ route('cancelation') }}">Cancellation policy</a>@endif
++                @if(config('app.status_url'))<a href="{{ config('app.status_url') }}" target="_blank" rel="noopener">System status</a>@endif
+             </nav>
+             <div class="footer-bottom-bar">
+                 &copy; {{ \App\CentralLogics\Helpers::get_settings('footer_text') }}
+-- 
+2.43.0
+

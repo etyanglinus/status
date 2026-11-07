@@ -1,0 +1,88 @@
+From 091ed269f978cbf610dcab63e0c696bcc37e8431 Mon Sep 17 00:00:00 2001
+From: Fasta Status <dorcusjepkemoi@gmail.com>
+Date: Fri, 6 Nov 2026 13:53:40 +0000
+Subject: [PATCH] Block public access to private files in the web root
+
+The project folder is the web root, so storage/oauth-private.key, storage/logs,
+installation/backup/*.sql|zip, composer.*, vendor/ and other private files were
+downloadable. Deny every real file/folder except index.php, public/,
+storage/app/public/ and Modules/*/public/. Rules only match paths that exist on
+disk, so Laravel routes are unaffected. Also add HSTS and basic security headers.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01V7K1yNCHEejmZswoaHaxL7
+---
+ .htaccess | 53 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 48 insertions(+), 5 deletions(-)
+
+diff --git a/.htaccess b/.htaccess
+index 1ad74ac..8962295 100644
+--- a/.htaccess
++++ b/.htaccess
+@@ -5,6 +5,42 @@
+ 
+     RewriteEngine On
+ 
++    # --- SECURITY: this project folder is the web root, so block every real file or folder that
++    # is not meant to be public. Rules only fire for paths that exist on disk, so Laravel routes
++    # such as /vendor/..., /config-setup or /lang/{locale} are not affected.
++    # Public: index.php, /public/*, uploads under /storage/app/public/*, /Modules/*/public/*.
++    RewriteRule ^\.well-known/ - [L]
++
++    # Dotfiles and dot-directories (.env, .git, .rnd, .user.ini ...)
++    RewriteCond %{REQUEST_FILENAME} -f [OR]
++    RewriteCond %{REQUEST_FILENAME} -d
++    RewriteRule (^|/)\. - [F,L]
++
++    # Private application folders
++    RewriteCond %{REQUEST_FILENAME} -f [OR]
++    RewriteCond %{REQUEST_FILENAME} -d
++    RewriteRule ^(app|bootstrap|config|database|installation|lang|node_modules|resources|routes|scripts|tests|vendor|__MACOSX|Documentation|postman|releases)(/|$) - [F,L,NC]
++
++    # storage: only uploaded public files (oauth keys, logs, backups, sessions stay private)
++    RewriteCond %{REQUEST_URI} !^/storage/app/public/ [NC]
++    RewriteCond %{REQUEST_FILENAME} -f [OR]
++    RewriteCond %{REQUEST_FILENAME} -d
++    RewriteRule ^storage(/|$) - [F,L,NC]
++
++    # Modules: only each module's public/ assets
++    RewriteCond %{REQUEST_URI} !^/Modules/[^/]+/public/ [NC]
++    RewriteCond %{REQUEST_FILENAME} -f [OR]
++    RewriteCond %{REQUEST_FILENAME} -d
++    RewriteRule ^Modules(/|$) - [F,L,NC]
++
++    # Root-level build and config files
++    RewriteCond %{REQUEST_FILENAME} -f
++    RewriteRule ^(artisan|server\.php|composer\.(json|lock|phar)|package(-lock)?\.json|phpunit\.xml|modules_statuses\.json|vite[^/]*|webpack\.mix\.js|i18next-parser\.config\.mjs|build|error_log)$ - [F,L,NC]
++
++    # Sensitive file types anywhere
++    RewriteCond %{REQUEST_FILENAME} -f
++    RewriteRule \.(sql|sqlite|log|zip|tar|gz|bak|backup|old|swp|key|pem|crt|p12|env|ini|sh|md|lock|ya?ml|dist)$ - [F,L,NC]
++
+     # Handle Authorization Header
+     RewriteCond %{HTTP:Authorization} .
+     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+@@ -77,8 +113,15 @@
+     ExpiresByType text/html                     "access plus 0 seconds"
+ </IfModule>
+ 
+-# Hide a specific file
+-<Files .env>
+-    Order allow,deny
+-    Deny from all
+-</Files>
++# Hide sensitive files even if mod_rewrite is unavailable (Apache 2.4 syntax)
++<FilesMatch "(^\.|\.(env|sql|log|zip|key|pem|lock|phar|bak)$|^(artisan|composer\.json|phpunit\.xml)$)">
++    Require all denied
++</FilesMatch>
++
++<IfModule mod_headers.c>
++    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
++    Header always set X-Content-Type-Options "nosniff"
++    Header always set Referrer-Policy "strict-origin-when-cross-origin"
++    Header always set X-Frame-Options "SAMEORIGIN"
++    Header unset X-Powered-By
++</IfModule>
+-- 
+2.43.0
+

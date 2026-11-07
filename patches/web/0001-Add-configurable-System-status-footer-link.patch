@@ -1,0 +1,67 @@
+From fb01e397769f8b0b39e17ea1827c1112dca6614e Mon Sep 17 00:00:00 2001
+From: Fasta Status <dorcusjepkemoi@gmail.com>
+Date: Fri, 6 Nov 2026 13:44:28 +0000
+Subject: [PATCH] Add configurable System status footer link
+
+Links to the Fasta Status page (hosted separately). URL is configurable per
+environment so staging can point to its own status page.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01V7K1yNCHEejmZswoaHaxL7
+---
+ .env.development                     |  1 +
+ .env.production                      |  1 +
+ src/components/footer/FastaFooter.js | 12 ++++++++++++
+ 3 files changed, 14 insertions(+)
+
+diff --git a/.env.development b/.env.development
+index f88c1bf..b8ff7d3 100644
+--- a/.env.development
++++ b/.env.development
+@@ -6,3 +6,4 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+ NEXT_PUBLIC_FACEBOOK_APP_ID=
+ NEXT_PUBLIC_APPLE_SERVICE_ID=
+ NEXT_PUBLIC_APPLE_REDIRECT_URI=
++NEXT_PUBLIC_STATUS_URL=https://status-staging.fastadeliveries.co.ke
+diff --git a/.env.production b/.env.production
+index aac45b3..0b5312c 100644
+--- a/.env.production
++++ b/.env.production
+@@ -6,3 +6,4 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=833886382257-qsb4nno3vf2m9mfsuii12ug0487lls35.apps.
+ NEXT_PUBLIC_FACEBOOK_APP_ID=
+ NEXT_PUBLIC_APPLE_SERVICE_ID=
+ NEXT_PUBLIC_APPLE_REDIRECT_URI=
++NEXT_PUBLIC_STATUS_URL=https://status.fastadeliveries.co.ke
+diff --git a/src/components/footer/FastaFooter.js b/src/components/footer/FastaFooter.js
+index a5405b0..737902f 100644
+--- a/src/components/footer/FastaFooter.js
++++ b/src/components/footer/FastaFooter.js
+@@ -28,6 +28,13 @@ const icons = {
+ };
+ const validUrl = (value) =>
+   typeof value === "string" && /^https?:\/\//i.test(value);
++// Public status page (Fasta Status), hosted separately so it stays up when Fasta is down.
++// Configure per environment with NEXT_PUBLIC_STATUS_URL; set it to "off" to hide the link.
++const statusUrl = (() => {
++  const url =
++    process.env.NEXT_PUBLIC_STATUS_URL ?? "https://status.fastadeliveries.co.ke";
++  return /^https:\/\//i.test(url) ? url : null;
++})();
+ export const getFooterAppLinks = (data) => {
+   const links = data?.user_app_download_section?.download_user_app_links;
+   return [
+@@ -196,6 +203,11 @@ const FastaFooter = ({ configData, landingPageData, bottomSpace = 0 }) => {
+                 {item.label}
+               </Link>
+             ))}
++            {statusUrl && (
++              <a href={statusUrl} target="_blank" rel="noopener noreferrer">
++                System status
++              </a>
++            )}
+           </nav>
+         </div>
+       </div>
+-- 
+2.43.0
+
